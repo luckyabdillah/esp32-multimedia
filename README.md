@@ -119,12 +119,48 @@ Each module has a single responsibility. Shared state (e.g. `manifestItems[]`, `
 
 * Only basenames that have a **matching** gif+wav pair with exactly the same name (case-insensitive) are used. `005.gif` without `005.wav` (or vice versa) will be ignored.
 * The number of GIF and WAV files can be different; only matching pairs are required.
-* WAV files must be 16-bit PCM, mono or stereo, with any sample rate.
-* GIFs should ideally be 240x240 and **not delta-encoded**. If an animation appears frozen or does not play correctly, coalesce it first with ImageMagick:
+* WAV files must be 16-bit PCM, mono or stereo, with any sample rate. If you have an mp3 files, convert it to WAV first using ffmpeg:
 
 ```bash
-magick input.gif -coalesce -layers Optimize none output.gif
+ffmpeg -i input.mp3 -ar 44100 -ac 1 -c:a pcm_s16le output.wav
 ```
+
+* GIFs should ideally be **240×240** and **not delta-encoded**. If an animation appears frozen or does not play correctly, coalesce it first with ImageMagick to reconstruct each frame onto the full canvas:
+
+```bash
+magick input.gif -coalesce coalesced.gif
+```
+
+* After coalescing, generate an optimized color palette from the final **240×240** frames. The original aspect ratio is preserved, with black padding added where necessary:
+
+```bash
+ffmpeg -i coalesced.gif -vf "scale=240:240:force_original_aspect_ratio=decrease,pad=240:240:(ow-iw)/2:(oh-ih)/2:color=black,palettegen" palette.png
+```
+
+* Finally, use the generated `palette.png` to encode the GIF with dithering:
+
+```bash
+ffmpeg -i coalesced.gif -i palette.png -filter_complex "[0:v]scale=240:240:force_original_aspect_ratio=decrease,pad=240:240:(ow-iw)/2:(oh-ih)/2:color=black[x];[x][1:v]paletteuse=dither=sierra2_4a" output.gif
+```
+
+The recommended processing flow is:
+
+```text
+input.gif
+   │
+   ▼
+ImageMagick -coalesce
+   │
+   ▼
+coalesced.gif
+   │
+   ├──► scale + pad ──► palettegen ──► palette.png
+   │
+   └──► scale + pad + paletteuse ──► output.gif
+```
+
+This order ensures that frame reconstruction is performed before resizing, while the color palette is generated from the final 240×240 image dimensions.
+
 
 ## How It Works
 
