@@ -1,0 +1,16 @@
+# Arduino IDE / arduino-cli build artifacts
+build/
+*.elf
+*.bin
+*.map
+*.hex
+
+# PlatformIO (if this project is later moved to PlatformIO)
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/
