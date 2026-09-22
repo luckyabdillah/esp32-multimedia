@@ -4,8 +4,8 @@
 // BEHAVIOUR OPTIONS
 // ====================================================================
 
-// false = audio play once then silent (default)
-// true  = auto-repeat audio until button press (not recommended)
+// false = play audio once, then remain silent (default)
+// true  = automatically repeat audio until the button is pressed
 #define AUTO_REPEAT_AUDIO false
 
 // ====================================================================
